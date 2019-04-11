@@ -1,0 +1,20 @@
+[package]
+name = "cancellable-io"
+version = "0.1.0"
+authors = ["Emmanuel Lesueur <emmanuel@lesueur.name>"]
+edition = "2018"
+
+description = "Synchronous network I/O that can be interrupted."
+readme = "README.md"
+
+homepage = "https://github.com/Emm54321/cancellable-io"
+repository = "https://github.com/Emm54321/cancellable-io.git"
+
+categories = [ "network-programming" ]
+keywords = ["cancel", "network", "io"]
+
+license = "MIT/Apache-2.0"
+
+[dependencies]
+mio = "0.6.16"
+
