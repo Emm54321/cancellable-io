@@ -338,6 +338,12 @@ impl Read for TcpStream {
     /// Reads data from the socket. This operation can be cancelled
     /// by the associated [Canceller](struct.Canceller.html) object.
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        self.poll.reregister(
+            &self.stream,
+            OBJECT_TOKEN,
+            Ready::readable(),
+            PollOpt::level(),
+        )?;
         if self.options.read().unwrap().nonblocking {
             self.poll
                 .poll(&mut self.events, Some(Duration::from_millis(0)))?;
@@ -366,6 +372,9 @@ impl Read for TcpStream {
                         return Err(cancelled_error());
                     }
                 }
+                if read_timeout.is_some() {
+                    return Err(io::Error::from(io::ErrorKind::TimedOut));
+                }
             }
         }
     }
@@ -375,6 +384,12 @@ impl Write for TcpStream {
     /// Writes data to the socket. This operation can be cancelled
     /// by the associated [Canceller](struct.Canceller.html) object.
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.poll.reregister(
+            &self.stream,
+            OBJECT_TOKEN,
+            Ready::writable(),
+            PollOpt::level(),
+        )?;
         if self.options.read().unwrap().nonblocking {
             self.poll
                 .poll(&mut self.events, Some(Duration::from_millis(0)))?;
@@ -403,11 +418,20 @@ impl Write for TcpStream {
                         return Err(cancelled_error());
                     }
                 }
+                if write_timeout.is_some() {
+                    return Err(io::Error::from(io::ErrorKind::TimedOut));
+                }
             }
         }
     }
 
     fn flush(&mut self) -> io::Result<()> {
+        self.poll.reregister(
+            &self.stream,
+            OBJECT_TOKEN,
+            Ready::writable(),
+            PollOpt::level(),
+        )?;
         loop {
             self.poll.poll(&mut self.events, None)?;
             for event in self.events.iter() {
@@ -624,6 +648,9 @@ impl TcpListener {
                         return Err(cancelled_error());
                     }
                 }
+                if timeout.is_some() {
+                    return Err(io::Error::from(io::ErrorKind::TimedOut));
+                }
             }
         }
     }
@@ -731,6 +758,12 @@ impl UdpSocket {
     /// This method can be cancelled by the associated [Canceller](struct.Canceller.html)
     /// object.
     pub fn recv_from(&self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
+        self.poll.reregister(
+            &self.socket,
+            OBJECT_TOKEN,
+            Ready::readable(),
+            PollOpt::level(),
+        )?;
         let mut events = self.events.borrow_mut();
         if self.options.read().unwrap().nonblocking {
             self.poll
@@ -760,6 +793,9 @@ impl UdpSocket {
                         return Err(cancelled_error());
                     }
                 }
+                if read_timeout.is_some() {
+                    return Err(io::Error::from(io::ErrorKind::TimedOut));
+                }
             }
         }
     }
@@ -769,6 +805,12 @@ impl UdpSocket {
     /// This method can be cancelled by the associated [Canceller](struct.Canceller.html)
     /// object.
     pub fn send_to(&self, buf: &[u8], addr: &SocketAddr) -> io::Result<usize> {
+        self.poll.reregister(
+            &self.socket,
+            OBJECT_TOKEN,
+            Ready::writable(),
+            PollOpt::level(),
+        )?;
         let mut events = self.events.borrow_mut();
         if self.options.read().unwrap().nonblocking {
             self.poll
@@ -797,6 +839,9 @@ impl UdpSocket {
                     } else if t == STOP_TOKEN {
                         return Err(cancelled_error());
                     }
+                }
+                if write_timeout.is_some() {
+                    return Err(io::Error::from(io::ErrorKind::TimedOut));
                 }
             }
         }
@@ -977,6 +1022,12 @@ impl UdpSocket {
     /// This method can be cancelled by the associated [Canceller](struct.Canceller.html)
     /// object.
     pub fn recv(&self, buf: &mut [u8]) -> io::Result<usize> {
+        self.poll.reregister(
+            &self.socket,
+            OBJECT_TOKEN,
+            Ready::readable(),
+            PollOpt::level(),
+        )?;
         let mut events = self.events.borrow_mut();
         if self.options.read().unwrap().nonblocking {
             self.poll
@@ -1006,6 +1057,9 @@ impl UdpSocket {
                         return Err(cancelled_error());
                     }
                 }
+                if read_timeout.is_some() {
+                    return Err(io::Error::from(io::ErrorKind::TimedOut));
+                }
             }
         }
     }
@@ -1015,6 +1069,12 @@ impl UdpSocket {
     /// This method can be cancelled by the associated [Canceller](struct.Canceller.html)
     /// object.
     pub fn send(&self, buf: &[u8]) -> io::Result<usize> {
+        self.poll.reregister(
+            &self.socket,
+            OBJECT_TOKEN,
+            Ready::writable(),
+            PollOpt::level(),
+        )?;
         let mut events = self.events.borrow_mut();
         if self.options.read().unwrap().nonblocking {
             self.poll
@@ -1043,6 +1103,9 @@ impl UdpSocket {
                     } else if t == STOP_TOKEN {
                         return Err(cancelled_error());
                     }
+                }
+                if write_timeout.is_some() {
+                    return Err(io::Error::from(io::ErrorKind::TimedOut));
                 }
             }
         }
